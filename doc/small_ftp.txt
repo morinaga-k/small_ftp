@@ -12,12 +12,14 @@ You can use following commands.
  delete file
  rename file
  make directory
+ remake directory
 
 Maps:
 	<Enter> -> get
 	<del> -> del
-	<Insert> -> rename
-	<Home> -> mkdir
+	<F2> -> rename
+	<F3> -> mkdir
+	<F4> -> rmdir
 
 Command:
 	:SmallFtp
