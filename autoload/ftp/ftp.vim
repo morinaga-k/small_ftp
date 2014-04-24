@@ -6,6 +6,7 @@ let s:fin=1
 let s:cwd="/cgi/\r"
 let s:fl = []
 let s:prevwd = []
+"let s:row = 0
 function! ftp#ftp#Ftpleave()
 		if s:fin == 1
 				let s:fl[3] = "cd " . s:cwd
@@ -39,14 +40,43 @@ function! s:Threewinc(bl)
 	"call cursor(8,1)
 endfunction
 
+" param name {string} seek name in a head of the line of the buffer.
+function! s:Seekhead(name)
+	let lines = getline(0, line("$"))
+	let res = 0
+	let i = 0
+	let l = len(lines)
+	while i < l
+		let sc = split(lines[i])
+		if sc[0] =~ a:name
+			call cursor(i + 1, 1)
+			return 
+			"return i + 1
+			"let res = i
+			"break
+		endif
+		let i += 1
+	endwhile
+	"return res
+endfunction
+
 " chmod ====================================
 function! s:PMf()
+	"let s:row = line('.')
 	let name = expand("<cfile>")
-	let pm = input("change mode ")
+	silent call s:Getlist(2)
+	"let n = 
+	call s:Seekhead(name)
+	redraw!
+
+	let pm = input(name . " change mode ")
+	if pm == ""
+		return
+	endif
 	let s:fl[5] = "quote site chmod " . pm . " " . name
 	call writefile(s:fl, "_ftprc", "b")
 	silent call s:Threewinc(2)
-
+	call s:Seekhead(name)
 endfunction
 
 " rmdir ====================================
@@ -183,19 +213,21 @@ function! s:Snip(t)
 endfunction
 
 function! s:Getlist(bl)
+		" ls =====================
 		2winc w
+		let detflg = 0
 		silent 1,$delete
-		if a:bl == 1
-			let s:fl[5] = "ls\r"
-  	elseif a:bl == 2
+		if a:bl == 2
 			let s:fl[5] = "ls -l\r"
+			let detflg = 1
 	  else 
 			let s:fl[5] = "ls\r"
 		endif
 	"	call extend(s:fl, ["verbose\r"], 5)
-		silent call writefile(s:fl, "_ftprc", "b")
 		cd $vim/vimfiles/autoload/ftp
+		silent call writefile(s:fl, "_ftprc", "b")
 		silent r !ftp -s:_ftprc
+		" cleanning ==============
 		%s///g
 		%call s:Snip('^\.')
 		call cursor(expand("$"),1)
@@ -209,8 +241,30 @@ function! s:Getlist(bl)
 			silent 1,12delete
 		endif
 		%call s:Snip('^\.')
+		if detflg == 1
+			" Get the all line in the buffer.
+			let lines = getline(0, line("$"))
+			let i = 0
+			for line in lines
+				let lst = split(line)
+				call reverse(lst)
+				echo "len is " . len(lst)
+				call remove(lst, 1, len(lst) - 2)
+				let str = join(lst, " ")
+				call setline(i, str)
+				let i += 1
+				redraw
+			endfor
+			1,2delete
+			$delete
+		endif
 		call setline(expand("$"), "../")
-		call cursor(1,1)
+		if detflg != 1
+			call cursor(1,1)
+	"	else 
+	"		call cursor(s:row, 1)
+		endif
+		redraw!
 endfunction
 
 "================== Start ================

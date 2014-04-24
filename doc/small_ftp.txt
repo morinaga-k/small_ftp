@@ -13,6 +13,7 @@ You can use following commands.
  rename file
  make directory
  remake directory
+ change permission
 
 Maps:
 	<Enter> -> get
@@ -20,6 +21,7 @@ Maps:
 	<F2> -> rename
 	<F3> -> mkdir
 	<F4> -> rmdir
+	<F5> -> chmod
 
 Command:
 	:SmallFtp
