@@ -1,4 +1,5 @@
-*small_ftp.txt*	Plugin for using ftp on vim
+*small_ftp.txt*	Plugin for using ftp on vim.
+This plug-in is simple.
 
 Author: mori <y326045@yahoo.co.jp>
 License: This file is placed in the public domain.
@@ -7,21 +8,34 @@ License: This file is placed in the public domain.
 *small_ftp* is a Vim plug-in to easily use the ftp.
 You can use following commands.
 
- auto upload
- download file
- delete file
- rename file
+ automatic upload after saving file
+ download by key pressing
+ delete
+ rename
  make directory
- remake directory
+ remove directory
  change permission
+ sort 
+ reverse
 
-Maps:
-	<Enter> -> get
-	<del> -> del
-	<F2> -> rename
-	<F3> -> mkdir
-	<F4> -> rmdir
-	<F5> -> chmod
+Installations:
+	Copy each file from this repository into your folder of the same name.
+
+	$Vim/vimfiles/plugin/
+	$Vim/vimfiles/autoload/
+	$Vim/vimfiles/doc/
+
+
+Mappings:
+	default mappings
+		nmap <unique> <silent> <Enter> <plug>(get)
+		nmap <unique> <silent> <Del> <plug>(del)
+		nmap <unique> <silent> <F2> <plug>(rename)
+		nmap <unique> <silent> <F3> <plug>(mkdir)
+		nmap <unique> <silent> <F4> <plug>(rmdir)
+		nmap <unique> <silent> <F5> <plug>(chmod)
+		nmap <unique> <silent> <F6> <plug>(sort)
+		nmap <unique> <silent> <F7> <plug>(reverse)
 
 Command:
 	:SmallFtp

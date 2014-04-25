@@ -6,7 +6,6 @@ let s:fin=1
 let s:cwd="/cgi/\r"
 let s:fl = []
 let s:prevwd = []
-"let s:row = 0
 function! ftp#ftp#Ftpleave()
 		if s:fin == 1
 				let s:fl[3] = "cd " . s:cwd
@@ -26,7 +25,6 @@ function! s:Cutspce()
 		endif
 endfunction
 
-" parm number {0 | 1 | 2} 
 function! s:Threewinc(bl)
 	3winc w
 	1,$delete
@@ -40,7 +38,6 @@ function! s:Threewinc(bl)
 	"call cursor(8,1)
 endfunction
 
-" param name {string} seek name in a head of the line of the buffer.
 function! s:Seekhead(name)
 	let lines = getline(0, line("$"))
 	let res = 0
@@ -51,24 +48,35 @@ function! s:Seekhead(name)
 		if sc[0] =~ a:name
 			call cursor(i + 1, 1)
 			return 
-			"return i + 1
-			"let res = i
-			"break
 		endif
 		let i += 1
 	endwhile
-	"return res
+endfunction
+
+" reverse ==================================
+function! ftp#ftp#RVf()
+	let lines = getline(0, line("$"))
+	call reverse(lines)
+	for i in range(len(lines))
+		call setline(i, lines[i])
+	endfor
+endfunction
+
+" sort =====================================
+function! ftp#ftp#STf()
+	let lines = getline(0, line("$"))
+	call sort(lines)
+	for i in range(len(lines))
+		call setline(i, lines[i])
+	endfor
 endfunction
 
 " chmod ====================================
-function! s:PMf()
-	"let s:row = line('.')
+function! ftp#ftp#PMf()
 	let name = expand("<cfile>")
 	silent call s:Getlist(2)
-	"let n = 
 	call s:Seekhead(name)
 	redraw!
-
 	let pm = input(name . " change mode ")
 	if pm == ""
 		return
@@ -80,7 +88,7 @@ function! s:PMf()
 endfunction
 
 " rmdir ====================================
-function! s:RMf()
+function! ftp#ftp#RMf()
 	let rmres = input("delete this folder? y:n ")
 	if rmres == "n"
 		echo ""
@@ -92,7 +100,7 @@ function! s:RMf()
 endfunction
 
 " mkdir ===================================
-function! s:MDf()
+function! ftp#ftp#MDf()
 	let newdir = input("mkdir ")
 	if newdir == ""
 		return
@@ -103,14 +111,13 @@ function! s:MDf()
 endfunction
 
 " rename =================================
-function! s:RNf()
+function! ftp#ftp#RNf()
 	let oldname = expand("<cfile>")
 	let newname = input("rename to ")
 	if newname == ""
 			return
 	endif
 	let ext = expand("<cfile>:e")
-
 	if oldname =~ "[.]" && ext == " "
 			let endp = stridx(oldname, ".")	
 			let oldname = oldname[0: endp]
@@ -125,7 +132,7 @@ function! s:RNf()
 endfunction
 
 " del ==================================
-function! s:Df()
+function! ftp#ftp#Df()
 	let dlres = input("delete this file? y:n ")
 	if dlres == "n"
 		echo ""
@@ -142,7 +149,8 @@ fun! Echo(txt)
 	3sleep
 endfun
 
-function! s:Gf()
+" get ==================================
+function! ftp#ftp#Gf()
 		if getcwd() != "$vim/vimfiles/autoload/ftp"
 				cd $vim/vimfiles/autoload/ftp
 		endif
@@ -152,10 +160,7 @@ function! s:Gf()
 				if s:fl[3] == "cd /"
 						return
 				endif
-				if s:fl[3] =~ "^\r"
-					echo "find cr at head of line"
-					3sleep
-				endif
+				"
 				let s:fl[3] = remove(s:prevwd, len(s:prevwd)-1)
 				echo "Parent directory is " . s:fl[3]
 				call writefile(s:fl, "_ftprc", "b")
@@ -182,7 +187,6 @@ function! s:Gf()
 		let s:fl = readfile("_ftprc", "b")
 		if len(s:fl) >= 7
 				call remove(s:fl, 5, len(s:fl)-1)
-				" no need below.
 				call writefile(s:fl, "_ftprc", "b")
 		endif
 		call add(s:fl, "get " . dest . "\r")
@@ -207,7 +211,7 @@ function! s:Snip(t)
 				call setline('.', strt)
 		endif
 		let res = match(str, a:t)
-		if res != -1						" If match an argument.
+		if res != -1
 				delete
 		endif
 endfunction
@@ -223,11 +227,9 @@ function! s:Getlist(bl)
 	  else 
 			let s:fl[5] = "ls\r"
 		endif
-	"	call extend(s:fl, ["verbose\r"], 5)
 		cd $vim/vimfiles/autoload/ftp
 		silent call writefile(s:fl, "_ftprc", "b")
 		silent r !ftp -s:_ftprc
-		" cleanning ==============
 		%s///g
 		%call s:Snip('^\.')
 		call cursor(expand("$"),1)
@@ -241,8 +243,8 @@ function! s:Getlist(bl)
 			silent 1,12delete
 		endif
 		%call s:Snip('^\.')
+		" ls -l ===========================
 		if detflg == 1
-			" Get the all line in the buffer.
 			let lines = getline(0, line("$"))
 			let i = 0
 			for line in lines
@@ -261,29 +263,29 @@ function! s:Getlist(bl)
 		call setline(expand("$"), "../")
 		if detflg != 1
 			call cursor(1,1)
-	"	else 
-	"		call cursor(s:row, 1)
 		endif
 		redraw!
 endfunction
 
 "================== Start ================
 function! ftp#ftp#Ftpg()
+		" setlocal
 		set nobackup
 		set splitright
 		cd $vim/vimfiles/autoload/ftp/tmp
 		vsplit ./ftp
+		" setlocal
 		set cursorline
 		highlight CursorLine guibg=blue ctermbg=blue
-		nnoremap <F5> :call <SID>PMf()<cr>
-		nnoremap <F4> :call <SID>RMf()<cr>
-		nnoremap <F3> :call <SID>MDf()<cr>
-		nnoremap <F2> :call <SID>RNf()<cr>
-		nnoremap <del> :call <SID>Df()<cr>
-		nnoremap <Enter> :call <SID>Gf()<cr>
+	"	noremap <silent> <unique> <F5> :call <SID>PMf()<cr>
+	"	noremap <silent> <unique> <F4> :call <SID>RMf()<cr>
+	"	noremap <silent> <unique> <F3> :call <SID>MDf()<cr>
+	"	noremap <silent> <unique> <F2> :call <SID>RNf()<cr>
+	"	noremap <silent> <unique> <del> :call <SID>Df()<cr>
+	"	noremap <silent> <unique> <Enter> :call <SID>Gf()<cr>
 		"============== Init =================
 		cd ..
-		" Reading a file.
+		" readfile 
 		let s:fl = readfile("_ftprc", "b")
 		let tt = s:fl[3]
 		while tt != "cd /\r"
@@ -299,7 +301,6 @@ function! ftp#ftp#Ftpg()
 										\ "remote dir"]
 						for i in range(0, len(str)-1)
 								let acnt[i] = input("Input FTP " . str[i] . " ")
-								" No check below ======================================
 								if acnt[i] == ""
 										return
 								endif
