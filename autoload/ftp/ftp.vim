@@ -5,11 +5,10 @@ set cpo&vim
 let s:fin=1
 let s:cwd="/cgi/\r"
 let s:fl = []
-let s:prevwd = []
+let s:prevwd = ["cd /"]
 function! ftp#ftp#Ftpleave()
 		if s:fin == 1
 				let s:fl[3] = "cd " . s:cwd
-"				let s:fl[5] = "ls\r"
 				call writefile(s:fl, "_ftprc", "b")
 		else
 		endif
@@ -35,7 +34,6 @@ function! s:Threewinc(bl)
 	if a:bl != 0
 		call s:Getlist(a:bl)
 	endif
-	"call cursor(8,1)
 endfunction
 
 function! s:Seekhead(name)
@@ -51,6 +49,30 @@ function! s:Seekhead(name)
 		endif
 		let i += 1
 	endwhile
+endfunction
+
+function! s:Chget(filename)
+		cd $vim/vimfiles/autoload/ftp/tmp/
+		3winc w
+		r !del *.txt *.cgi *.html
+		cd $vim/vimfiles/autoload/ftp
+		let s:fl = readfile("_ftprc", "b")
+		if len(s:fl) >= 7
+				call remove(s:fl, 5, len(s:fl)-1)
+				call writefile(s:fl, "_ftprc", "b")
+		endif
+		call add(s:fl, "get " . a:filename . "\r")
+		call add(s:fl, "disconnect\r")
+		call add(s:fl, "bye")
+		call writefile(s:fl, "_ftprc", "b")
+endfunction
+
+function! ftp#ftp#MCf()
+endfunction
+
+" copy =====================================
+function! ftp#ftp#CPf()
+	
 endfunction
 
 " reverse ==================================
@@ -77,6 +99,7 @@ function! ftp#ftp#PMf()
 	silent call s:Getlist(2)
 	call s:Seekhead(name)
 	redraw!
+
 	let pm = input(name . " change mode ")
 	if pm == ""
 		return
@@ -118,6 +141,7 @@ function! ftp#ftp#RNf()
 			return
 	endif
 	let ext = expand("<cfile>:e")
+
 	if oldname =~ "[.]" && ext == " "
 			let endp = stridx(oldname, ".")	
 			let oldname = oldname[0: endp]
@@ -149,7 +173,6 @@ fun! Echo(txt)
 	3sleep
 endfun
 
-" get ==================================
 function! ftp#ftp#Gf()
 		if getcwd() != "$vim/vimfiles/autoload/ftp"
 				cd $vim/vimfiles/autoload/ftp
@@ -160,7 +183,10 @@ function! ftp#ftp#Gf()
 				if s:fl[3] == "cd /"
 						return
 				endif
-				"
+				if s:fl[3] =~ "^\r"
+					echo "find cr at head of line"
+					3sleep
+				endif
 				let s:fl[3] = remove(s:prevwd, len(s:prevwd)-1)
 				echo "Parent directory is " . s:fl[3]
 				call writefile(s:fl, "_ftprc", "b")
@@ -180,19 +206,8 @@ function! ftp#ftp#Gf()
 				return
 		endif
 
-		cd $vim/vimfiles/autoload/ftp/tmp/
-		3winc w
-		r !del *.txt *.cgi *.html
-		cd $vim/vimfiles/autoload/ftp
-		let s:fl = readfile("_ftprc", "b")
-		if len(s:fl) >= 7
-				call remove(s:fl, 5, len(s:fl)-1)
-				call writefile(s:fl, "_ftprc", "b")
-		endif
-		call add(s:fl, "get " . dest . "\r")
-		call add(s:fl, "disconnect\r")
-		call add(s:fl, "bye")
-		call writefile(s:fl, "_ftprc", "b")
+		call s:Chget(dest)
+
 		call s:Threewinc(0)
 		cd $vim/vimfiles/autoload/ftp/tmp/
 		1winc w
@@ -211,24 +226,26 @@ function! s:Snip(t)
 				call setline('.', strt)
 		endif
 		let res = match(str, a:t)
-		if res != -1
+		if res != -1	
 				delete
 		endif
 endfunction
 
 function! s:Getlist(bl)
 		" ls =====================
-		2winc w
-		let detflg = 0
-		silent 1,$delete
-		if a:bl == 2
-			let s:fl[5] = "ls -l\r"
-			let detflg = 1
-	  else 
-			let s:fl[5] = "ls\r"
+			2winc w
+			let detflg = 0
+		if a:bl != 3
+			silent 1,$delete
+			if a:bl == 2
+				let s:fl[5] = "ls -l\r"
+				let detflg = 1
+		  else 
+				let s:fl[5] = "ls\r"
+			endif
+			cd $vim/vimfiles/autoload/ftp
+			silent call writefile(s:fl, "_ftprc", "b")
 		endif
-		cd $vim/vimfiles/autoload/ftp
-		silent call writefile(s:fl, "_ftprc", "b")
 		silent r !ftp -s:_ftprc
 		%s///g
 		%call s:Snip('^\.')
@@ -243,7 +260,6 @@ function! s:Getlist(bl)
 			silent 1,12delete
 		endif
 		%call s:Snip('^\.')
-		" ls -l ===========================
 		if detflg == 1
 			let lines = getline(0, line("$"))
 			let i = 0
@@ -269,12 +285,10 @@ endfunction
 
 "================== Start ================
 function! ftp#ftp#Ftpg()
-		" setlocal
 		set nobackup
 		set splitright
 		cd $vim/vimfiles/autoload/ftp/tmp
 		vsplit ./ftp
-		" setlocal
 		set cursorline
 		highlight CursorLine guibg=blue ctermbg=blue
 	"	noremap <silent> <unique> <F5> :call <SID>PMf()<cr>
@@ -285,40 +299,46 @@ function! ftp#ftp#Ftpg()
 	"	noremap <silent> <unique> <Enter> :call <SID>Gf()<cr>
 		"============== Init =================
 		cd ..
-		" readfile 
+		" Reading a file.
 		let s:fl = readfile("_ftprc", "b")
-		let tt = s:fl[3]
-		while tt != "cd /\r"
-			let tm = strridx(tt, "/", len(tt) - 3)
-			let tt = strpart(tt, 0, tm + 1)
-			let tt = tt . "\r"
-			call add(s:prevwd, tt)
-		endwhile
-		call reverse(s:prevwd)
-		if len(s:fl) == 1
-				let acnt = [0, 0, 0, 0]
-				let str = ["server", "user ID ", "password", 
-										\ "remote dir"]
+		let ll = len(s:fl)
+		if ll != 1
+			let tt = s:fl[3]
+			while tt != "cd /\r"
+				let tm = strridx(tt, "/", len(tt) - 3)
+				let tt = strpart(tt, 0, tm + 1)
+				let tt = tt . "\r"
+				call add(s:prevwd, tt)
+			endwhile
+			call reverse(s:prevwd)
+		endif
+		if ll == 1
+				let s:fl = [0, 0, 0, 0]
+				let str = ["server", "user ID", "password", "cd"]
 						for i in range(0, len(str)-1)
-								let acnt[i] = input("Input FTP " . str[i] . " ")
-								if acnt[i] == ""
+								let s:fl[i] = input("Input FTP " . str[i] . " ")
+								if s:fl[i] == ""
 										return
 								endif
-								let acnt[i] = acnt[i] . "\r"
 								if i == 0
-										let acnt[i] = "open " . acnt[i]
+										let s:fl[i] = "open " . s:fl[i]
 								elseif i == 3
-										let acnt[i] = "cd " . acnt[i]
+										let ss = match(s:fl[i], "^cd")
+										if ss == -1
+											let s:fl[i] = "cd " . s:fl[i]
+										endif
 								endif		
+								let s:fl[i] = s:fl[i] . "\r"
 						endfor
-				call extend(acnt, ['lcd "c:\Program files\vim\vimfiles\autoload\ftp\tmp"' . "\r"])
-				call extend(acnt, ["ls\r", "disconnect\r", "bye"])
-				call writefile(acnt, "_ftprc", "b")
+				call add(s:fl, 'lcd "c:\Program files\vim\vimfiles\autoload\ftp\tmp"' . "\r")
+				"call extend(s:fl, ['lcd "c:\Program files\vim\vimfiles\autoload\ftp\tmp"' . "\r"])
+				call extend(s:fl, ["ls\r", "disconnect\r", "bye"])
+				call writefile(s:fl, "_ftprc", "b")
 		endif
 
-		call s:Getlist(1)
 		set splitbelow
 		new ./ftp
+		call s:Getlist(3)
 		1winc w
 		cd $vim/vimfiles/autoload/ftp/tmp
 		2winc w
